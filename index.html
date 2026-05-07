@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>课程作品匿名评分系统</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body{
+  font-family:"Microsoft YaHei",sans-serif;
+  background:#f4f6fb;
+  padding:30px;
+}
+.container{
+  max-width:1300px;
+  margin:auto;
+}
+.box{
+  background:white;
+  padding:24px;
+  border-radius:16px;
+  margin-bottom:24px;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+h1{text-align:center;color:#1f3a5f;}
+h2{color:#1f3a5f;}
+input,select{
+  padding:10px;
+  margin:6px;
+  border:1px solid #ccc;
+  border-radius:8px;
+}
+button{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+th{
+  background:#2563eb;
+  color:white;
+  padding:12px;
+}
+td{
+  border-bottom:1px solid #ddd;
+  padding:10px;
+  text-align:center;
+}
+a{
+  background:#16a34a;
+  color:white;
+  padding:6px 10px;
+  border-radius:8px;
+  text-decoration:none;
+}
+.scoreInput{
+  width:80px;
+}
+.tip{
+  color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>课程作品匿名评分系统</h1>
+
+<div class="box">
+  <h2>身份确认</h2>
+  <input id="currentUser" placeholder="请输入你的姓名，老师也输入姓名">
+  <button onclick="saveUser()">确认身份</button>
+  <p id="userInfo" class="tip"></p>
+</div>
+
+<div class="box">
+  <h2>提交阶段作品</h2>
+  <p class="tip">老师不需要提交作品，学生每个阶段提交1个作品链接。</p>
+
+  <select id="stage">
+    <option value="1">阶段1</option>
+    <option value="2">阶段2</option>
+    <option value="3">阶段3</option>
+  </select>
+
+  <input id="title" placeholder="作品名称">
+  <input id="link" placeholder="作品链接">
+
+  <button onclick="submitWork()">提交/更新作品</button>
+</div>
+
+<div class="box">
+  <h2>作品列表与匿名评分</h2>
+  <p class="tip">评分人不会在页面显示，每个作品由8名学生+1名老师共同评分。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>作者</th>
+        <th>阶段</th>
+        <th>作品名</th>
+        <th>作品链接</th>
+        <th>我的评分</th>
+        <th>保存评分</th>
+        <th>当前平均分</th>
+      </tr>
+    </thead>
+    <tbody id="workList"></tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>总成绩</h2>
+  <p class="tip">系统会读取后台 weights 表中的权重自动计算，但这里不显示权重比例。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>学生</th>
+        <th>阶段1平均分</th>
+        <th>阶段2平均分</th>
+        <th>阶段3平均分</th>
+        <th>最终成绩</th>
+      </tr>
+    </thead>
+    <tbody id="resultList"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+const supabaseUrl = "https://gzsocqnaoowhwjfzruhc.supabase.co";
+const supabaseKey = "sb_publishable_47-zT-7avu3y1tIXqWLQyw_2kc4AMsp";
+
+const client = supabase.createClient(supabaseUrl, supabaseKey);
+
+const worksTable = "智能设计与编程";
+
+let currentUser = localStorage.getItem("currentUser") || "";
+
+window.onload = function(){
+  if(currentUser){
+    document.getElementById("currentUser").value = currentUser;
+    document.getElementById("userInfo").innerText = "当前身份：" + currentUser;
+  }
+  loadAll();
+};
+
+function saveUser(){
+  const name = document.getElementById("currentUser").value.trim();
+  if(!name){
+    alert("请先输入姓名");
+    return;
+  }
+  currentUser = name;
+  localStorage.setItem("currentUser", currentUser);
+  document.getElementById("userInfo").innerText = "当前身份：" + currentUser;
+  loadAll();
+}
+
+async function submitWork(){
+  if(!currentUser){
+    alert("请先确认身份");
+    return;
+  }
+
+  const stage = Number(document.getElementById("stage").value);
+  const title = document.getElementById("title").value.trim();
+  const link = document.getElementById("link").value.trim();
+
+  if(!title || !link){
+    alert("请填写作品名称和作品链接");
+    return;
+  }
+
+  const { data: oldWork } = await client
+    .from(worksTable)
+    .select("*")
+    .eq("student", currentUser)
+    .eq("stage", stage)
+    .maybeSingle();
+
+  let result;
+
+  if(oldWork){
+    result = await client
+      .from(worksTable)
+      .update({ title, link })
+      .eq("id", oldWork.id);
+  }else{
+    result = await client
+      .from(worksTable)
+      .insert([{
+        id: Date.now(),
+        student: currentUser,
+        stage,
+        title,
+        link
+      }]);
+  }
+
+  if(result.error){
+    alert("提交失败：" + result.error.message);
+    console.error(result.error);
+    return;
+  }
+
+  alert("作品已保存");
+  document.getElementById("title").value = "";
+  document.getElementById("link").value = "";
+  await loadAll();
+}
+
+async function loadAll(){
+  await loadWorks();
+  await loadResults();
+}
+
+async function loadWorks(){
+  const { data: works, error } = await client
+    .from(worksTable)
+    .select("*")
+    .order("stage", { ascending:true });
+
+  if(error){
+    alert("读取作品失败：" + error.message);
+    console.error(error);
+    return;
+  }
+
+  const { data: scores } = await client
+    .from("scores")
+    .select("*");
+
+  const workList = document.getElementById("workList");
+  workList.innerHTML = "";
+
+  for(const work of works){
+    const workScores = scores.filter(s => Number(s.work_id) === Number(work.id));
+    const avg = workScores.length
+      ? workScores.reduce((sum,s)=>sum + Number(s.score),0) / workScores.length
+      : 0;
+
+    const myScore = currentUser
+      ? workScores.find(s => s.rater === currentUser)
+      : null;
+
+    workList.innerHTML += `
+      <tr>
+        <td>${work.student}</td>
+        <td>阶段${work.stage}</td>
+        <td>${work.title}</td>
+        <td><a href="${work.link}" target="_blank">查看作品</a></td>
+        <td>
+          <input 
+            class="scoreInput"
+            type="number"
+            min="0"
+            max="100"
+            id="score-${work.id}"
+            value="${myScore ? myScore.score : ""}"
+            placeholder="0-100">
+        </td>
+        <td>
+          <button onclick="saveScore(${work.id})">保存</button>
+        </td>
+        <td>${avg.toFixed(2)}</td>
+      </tr>
+    `;
+  }
+}
+
+async function saveScore(workId){
+  if(!currentUser){
+    alert("请先确认身份");
+    return;
+  }
+
+  const scoreValue = document.getElementById("score-" + workId).value;
+
+  if(scoreValue === "" || Number(scoreValue) < 0 || Number(scoreValue) > 100){
+    alert("请输入0-100的分数");
+    return;
+  }
+
+  const { data: oldScore } = await client
+    .from("scores")
+    .select("*")
+    .eq("work_id", workId)
+    .eq("rater", currentUser)
+    .maybeSingle();
+
+  let result;
+
+  if(oldScore){
+    result = await client
+      .from("scores")
+      .update({ score: Number(scoreValue) })
+      .eq("id", oldScore.id);
+  }else{
+    result = await client
+      .from("scores")
+      .insert([{
+        id: Date.now() + Math.floor(Math.random()*1000),
+        work_id: workId,
+        rater: currentUser,
+        score: Number(scoreValue)
+      }]);
+  }
+
+  if(result.error){
+    alert("评分失败：" + result.error.message);
+    console.error(result.error);
+    return;
+  }
+
+  alert("评分已保存");
+  loadAll();
+}
+
+async function loadResults(){
+  const { data: works } = await client
+    .from(worksTable)
+    .select("*");
+
+  const { data: scores } = await client
+    .from("scores")
+    .select("*");
+
+  const { data: weightData } = await client
+    .from("weights")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const w1 = weightData ? Number(weightData.stage1) / 100 : 0.2;
+  const w2 = weightData ? Number(weightData.stage2) / 100 : 0.3;
+  const w3 = weightData ? Number(weightData.stage3) / 100 : 0.5;
+
+  const students = [...new Set(works.map(w => w.student))];
+
+  const resultList = document.getElementById("resultList");
+  resultList.innerHTML = "";
+
+  students.forEach(student=>{
+    const stageAvgs = [1,2,3].map(stage=>{
+      const work = works.find(w => w.student === student && Number(w.stage) === stage);
+      if(!work) return 0;
+
+      const workScores = scores.filter(s => Number(s.work_id) === Number(work.id));
+      if(workScores.length === 0) return 0;
+
+      return workScores.reduce((sum,s)=>sum + Number(s.score),0) / workScores.length;
+    });
+
+    const total =
+      stageAvgs[0] * w1 +
+      stageAvgs[1] * w2 +
+      stageAvgs[2] * w3;
+
+    resultList.innerHTML += `
+      <tr>
+        <td>${student}</td>
+        <td>${stageAvgs[0].toFixed(2)}</td>
+        <td>${stageAvgs[1].toFixed(2)}</td>
+        <td>${stageAvgs[2].toFixed(2)}</td>
+        <td><b>${total.toFixed(2)}</b></td>
+      </tr>
+    `;
+  });
+}
+
+setInterval(loadAll, 5000);
+</script>
+
+</body>
+</html>
