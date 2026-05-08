@@ -2,69 +2,514 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>课程作品匿名评分系统</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课程作品互评系统｜学生端</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
+*{
+  box-sizing:border-box;
+}
+
 body{
-  font-family:"Microsoft YaHei",sans-serif;
-  background:#f4f6fb;
-  padding:30px;
+  margin:0;
+  min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+  color:#171735;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(181,155,255,.55), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(124,214,255,.48), transparent 32%),
+    radial-gradient(circle at 50% 78%, rgba(255,166,226,.45), transparent 36%),
+    linear-gradient(135deg,#f8f7ff 0%,#eef6ff 45%,#fbecff 100%);
+  overflow-x:hidden;
 }
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.75), transparent 22%),
+    linear-gradient(120deg,rgba(255,255,255,.22),transparent 40%,rgba(255,255,255,.22));
+  pointer-events:none;
+  animation:softMove 10s ease-in-out infinite alternate;
+}
+body::after{
+  content:"";
+  position:fixed;
+  width:900px;
+  height:900px;
+  right:-200px;
+  top:-200px;
+  background:
+    radial-gradient(circle,
+    rgba(124,92,255,.22),
+    transparent 70%);
+  filter:blur(80px);
+  pointer-events:none;
+  z-index:-1;
+}
+
+@keyframes softMove{
+  from{transform:translateY(0);}
+  to{transform:translateY(-24px);}
+}
+
 .container{
-  max-width:1300px;
+  width:min(1180px,90%);
   margin:auto;
+  padding:70px 0 100px;
+  animation:fadeIn .8s ease both;
 }
-.box{
-  background:white;
-  padding:24px;
-  border-radius:16px;
-  margin-bottom:24px;
-  box-shadow:0 6px 18px rgba(0,0,0,.08);
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
 }
-h1{text-align:center;color:#1f3a5f;}
-h2{color:#1f3a5f;}
-input,select{
-  padding:10px;
-  margin:6px;
-  border:1px solid #ccc;
-  border-radius:8px;
-}
-button{
-  padding:10px 16px;
-  border:none;
-  border-radius:8px;
-  background:#2563eb;
-  color:white;
-  cursor:pointer;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:15px;
-}
-th{
-  background:#2563eb;
-  color:white;
-  padding:12px;
-}
-td{
-  border-bottom:1px solid #ddd;
-  padding:10px;
+
+.hero{
   text-align:center;
+  padding:30px 20px 60px;
 }
-a{
-  background:#16a34a;
+
+.badge{
+  display:inline-block;
+  padding:8px 18px;
+  border-radius:999px;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.9);
+  color:#7c6df2;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:2px;
+  box-shadow:0 12px 40px rgba(130,120,220,.18);
+  backdrop-filter:blur(18px);
+}
+
+h1{
+  margin:24px 0 14px;
+  font-size:clamp(48px,8vw,96px);
+  line-height:.95;
+  letter-spacing:-5px;
+  font-weight:1000;
+  background:linear-gradient(90deg,#23235f,#6957ff,#c05cff,#5ecbff);
+  -webkit-background-clip:text;
+  color:transparent;
+  text-shadow:0 18px 55px rgba(119,91,255,.25);
+}
+
+.subtitle{
+  color:rgba(28,31,80,.58);
+  font-size:17px;
+  line-height:1.8;
+}
+
+.panel{
+  position:relative;
+  margin-top:34px;
+  padding:34px;
+  border-radius:36px;
+  background:linear-gradient(
+      135deg,
+      rgba(255,255,255,.72),
+      rgba(255,255,255,.32)
+    );
+  border:1px solid rgba(255,255,255,.95);
+  box-shadow:
+    0 30px 90px rgba(117,117,190,.22),
+    inset 0 1px 0 rgba(255,255,255,.8);
+  backdrop-filter:blur(34px);
+  overflow:hidden;
+}
+
+.panel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.35),transparent 45%);
+  pointer-events:none;
+}
+
+.panel-title{
+  position:relative;
+  z-index:2;
+  margin-bottom:28px;
+}
+
+.panel-title h2{
+  margin:0 0 8px;
+  font-size:30px;
+  color:#202052;
+  letter-spacing:-1px;
+}
+
+.panel-title p{
+  margin:0;
+  color:rgba(28,31,80,.52);
+}
+
+.student-grid{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  gap:18px;
+}
+
+.student-card{
+  cursor:pointer;
+  padding:18px 10px;
+  border-radius:28px;
+  border:1px solid rgba(255,255,255,.8);
+  background:rgba(255,255,255,.42);
+  color:#25245f;
+  box-shadow:0 16px 42px rgba(120,120,200,.15);
+  transition:.28s ease;
+  backdrop-filter:blur(20px);
+}
+
+.student-card:hover{
+  transform:translateY(-8px) scale(1.03);
+  box-shadow:0 24px 60px rgba(120,120,220,.28);
+}
+
+.student-card.active{
+  background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(219,226,255,.65));
+  box-shadow:0 24px 70px rgba(120,88,255,.35);
+  border:1px solid rgba(146,121,255,.55);
+}
+
+.avatar{
+  width:64px;
+  height:64px;
+  margin:0 auto 12px;
+  border-radius:22px;
+  display:grid;
+  place-items:center;
   color:white;
-  padding:6px 10px;
-  border-radius:8px;
+  font-size:25px;
+  font-weight:1000;
+  box-shadow:
+    0 18px 36px rgba(80,70,180,.25),
+    inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+.name{
+  font-size:14px;
+  font-weight:900;
+}
+
+.current-user{
+  position:relative;
+  z-index:2;
+  margin-top:22px;
+  color:#6d5dfc;
+  font-weight:900;
+}
+
+.stage-tabs{
+  position:relative;
+  z-index:2;
+  display:flex;
+  gap:14px;
+  margin-bottom:24px;
+}
+
+.stage-tab{
+  border:none;
+  padding:13px 24px;
+  border-radius:999px;
+  color:#5a55a8;
+  font-weight:900;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:0 12px 32px rgba(140,140,220,.13);
+  cursor:pointer;
+  transition:.25s;
+}
+
+.stage-tab:hover{
+  transform:translateY(-3px);
+}
+
+.stage-tab.active{
+  color:white;
+  background:linear-gradient(90deg,#ff7ab6,#8b5cf6,#5ecbff);
+  box-shadow:0 18px 42px rgba(139,92,246,.32);
+}
+
+.form-row{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:1fr 1.4fr auto;
+  gap:16px;
+}
+
+input{
+  width:100%;
+  border:none;
+  outline:none;
+  padding:16px 18px;
+  border-radius:20px;
+  color:#202052;
+  background:rgba(255,255,255,.78);
+  border:1px solid rgba(165,170,230,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+  font-size:15px;
+}
+
+input::placeholder{
+  color:rgba(32,32,82,.35);
+}
+
+.main-btn,
+.score-btn{
+  border:none;
+  border-radius:20px;
+  padding:15px 24px;
+  color:white;
+  font-weight:1000;
+  cursor:pointer;
+  background:linear-gradient(90deg,#ff7a90,#9b5cff,#5ecbff);
+  box-shadow:0 18px 42px rgba(139,92,246,.32);
+  transition:.25s;
+}
+
+.main-btn:hover,
+.score-btn:hover{
+  transform:translateY(-4px);
+}
+
+.stage-section{
+  position:relative;
+  z-index:2;
+  margin-top:34px;
+}
+
+.stage-heading{
+  margin:34px 0 22px;
+  font-size:28px;
+  font-weight:1000;
+  color:#202052;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.stage-heading span{
+  display:inline-grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border-radius:16px;
+  color:white;
+  background:linear-gradient(135deg,#6d5dfc,#64d2ff);
+  box-shadow:0 16px 36px rgba(109,93,252,.28);
+}
+
+.work-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:40px;
+}
+
+.work-card{
+  position:relative;
+  min-height:420px;
+  padding:36px;
+  border-radius:34px;
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.88);
+  box-shadow:
+    0 24px 66px rgba(118,118,190,.20),
+    inset 0 1px 0 rgba(255,255,255,.75);
+  backdrop-filter:blur(24px);
+  overflow:hidden;
+  transition:.28s ease;
+}
+
+.work-card:hover{
+  transform:translateY(-10px);
+  box-shadow:0 34px 90px rgba(118,118,210,.28);
+}
+
+.work-card::before{
+  content:"";
+  position:absolute;
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  right:-60px;
+  top:-60px;
+  background:var(--glow);
+  filter:blur(55px);
+  opacity:.55;
+}
+
+.card-top{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.small-avatar{
+  width:58px;
+  height:58px;
+  border-radius:20px;
+  display:grid;
+  place-items:center;
+  color:white;
+  font-size:22px;
+  font-weight:1000;
+  background:var(--grad);
+  box-shadow:0 16px 36px rgba(80,70,180,.22);
+}
+
+.author{
+  font-size:18px;
+  font-weight:1000;
+  color:#202052;
+}
+
+.stage-label{
+  color:rgba(32,32,82,.48);
+  font-size:13px;
+  margin-top:3px;
+}
+
+.work-title{
+  position:relative;
+  z-index:2;
+  margin:26px 0 18px;
+  font-size:21px;
+  font-weight:1000;
+  color:#171735;
+  line-height:1.35;
+  min-height:58px;
+}
+
+.empty{
+  position:relative;
+  z-index:2;
+  color:rgba(32,32,82,.46);
+  font-size:14px;
+  line-height:1.8;
+  margin-top:26px;
+}
+
+.link-btn{
+  position:relative;
+  z-index:2;
+  display:inline-block;
   text-decoration:none;
+  color:white;
+  padding:11px 16px;
+  border-radius:16px;
+  background:linear-gradient(90deg,#5ecbff,#8b5cf6);
+  font-weight:900;
+  box-shadow:0 14px 32px rgba(91,128,255,.28);
+  margin-bottom:16px;
 }
-.scoreInput{
-  width:80px;
+
+.score-row{
+  position:relative;
+  z-index:2;
+  display:flex;
+  gap:10px;
+  margin-top:12px;
 }
-.tip{
-  color:#666;
+
+.score-row input{
+  padding:13px;
+}
+
+.scored-tag{
+  position:relative;
+  z-index:2;
+  display:inline-block;
+  margin-top:12px;
+  padding:9px 14px;
+  border-radius:999px;
+  background:rgba(49,196,141,.15);
+  border:1px solid rgba(49,196,141,.28);
+  color:#139963;
+  font-size:13px;
+  font-weight:900;
+}
+
+.delete-btn{
+  position:relative;
+  z-index:2;
+  display:block;
+  margin:10px 0 14px;
+  border:none;
+  border-radius:16px;
+  padding:11px 15px;
+  background:linear-gradient(90deg,#ff5f6d,#ffc371);
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 12px 30px rgba(255,95,109,.28);
+  transition:.25s;
+}
+
+.delete-btn:hover{
+  transform:translateY(-3px);
+}
+
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:38px;
+  transform:translateX(-50%) translateY(100px);
+  padding:15px 24px;
+  border-radius:999px;
+  background:rgba(255,255,255,.75);
+  color:#202052;
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 24px 70px rgba(120,120,220,.25);
+  backdrop-filter:blur(18px);
+  opacity:0;
+  transition:.35s;
+  z-index:999;
+  font-weight:900;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+@media(max-width:1100px){
+  .student-grid{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+  .work-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+@media(max-width:680px){
+  .container{
+    width:94%;
+    padding-top:32px;
+  }
+
+  .student-grid,
+  .work-grid,
+  .form-row{
+    grid-template-columns:1fr;
+  }
+
+  h1{
+    font-size:46px;
+    letter-spacing:-2px;
+  }
 }
 </style>
 </head>
@@ -73,129 +518,207 @@ a{
 
 <div class="container">
 
-<h1>课程作品匿名评分系统</h1>
+  <section class="hero">
+    <div class="badge">ART COURSE PEER REVIEW</div>
+    <h1>课程作品互评系统</h1>
+    <div class="subtitle">
+      选择你的身份，提交三个阶段作品，并完成评分。<br>
+    </div>
+  </section>
 
-<div class="box">
-  <h2>身份确认</h2>
-  <input id="currentUser" placeholder="请输入你的姓名，老师也输入姓名">
-  <button onclick="saveUser()">确认身份</button>
-  <p id="userInfo" class="tip"></p>
-</div>
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>选择你的身份</h2>
+        <p>请点击自己的姓名头像。老师只评分，不需要提交作品。</p>
+      </div>
+    </div>
 
-<div class="box">
-  <h2>提交阶段作品</h2>
-  <p class="tip">老师不需要提交作品，学生每个阶段提交1个作品链接。</p>
+    <div class="student-grid" id="studentGrid"></div>
+    <div class="current-user" id="currentUserText">当前未选择身份</div>
+  </section>
 
-  <select id="stage">
-    <option value="1">阶段1</option>
-    <option value="2">阶段2</option>
-    <option value="3">阶段3</option>
-  </select>
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>提交我的阶段作品</h2>
+        <p>每位学生每个阶段提交一个作品链接。再次提交同阶段作品会覆盖原内容。</p>
+      </div>
+    </div>
 
-  <input id="title" placeholder="作品名称">
-  <input id="link" placeholder="作品链接">
+    <div class="stage-tabs">
+      <button class="stage-tab active" onclick="setSubmitStage(1)">阶段 1</button>
+      <button class="stage-tab" onclick="setSubmitStage(2)">阶段 2</button>
+      <button class="stage-tab" onclick="setSubmitStage(3)">阶段 3</button>
+    </div>
 
-  <button onclick="submitWork()">提交/更新作品</button>
-</div>
+    <div class="form-row">
+      <input id="workTitle" placeholder="作品名称，例如：阶段一交互作品">
+      <input id="workLink" placeholder="作品链接，例如：https://...">
+      <button class="main-btn" onclick="submitWork()">提交 / 更新</button>
+    </div>
+  </section>
 
-<div class="box">
-  <h2>作品列表与匿名评分</h2>
-  <p class="tip">评分人不会在页面显示，每个作品由8名学生+1名老师共同评分。</p>
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>作品评分区</h2>
+        <p>每人对同一阶段同一作品只能评分一次。评分后页面只提示成功。</p>
+      </div>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>作者</th>
-        <th>阶段</th>
-        <th>作品名</th>
-        <th>作品链接</th>
-        <th>我的评分</th>
-        <th>保存评分</th>
-        <th>当前平均分</th>
-      </tr>
-    </thead>
-    <tbody id="workList"></tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>总成绩</h2>
-  <p class="tip">系统会读取后台 weights 表中的权重自动计算，但这里不显示权重比例。</p>
-
-  <table>
-    <thead>
-      <tr>
-        <th>学生</th>
-        <th>阶段1平均分</th>
-        <th>阶段2平均分</th>
-        <th>阶段3平均分</th>
-        <th>最终成绩</th>
-      </tr>
-    </thead>
-    <tbody id="resultList"></tbody>
-  </table>
-</div>
+    <div id="worksArea"></div>
+  </section>
 
 </div>
+
+<div class="toast" id="toast">评分成功</div>
 
 <script>
 const supabaseUrl = "https://gzsocqnaoowhwjfzruhc.supabase.co";
 const supabaseKey = "sb_publishable_47-zT-7avu3y1tIXqWLQyw_2kc4AMsp";
-
 const client = supabase.createClient(supabaseUrl, supabaseKey);
 
 const worksTable = "智能设计与编程";
 
-let currentUser = localStorage.getItem("currentUser") || "";
+const students = [
+  "刘一",
+  "王景璇",
+  "龙珊",
+  "鲍禹尧",
+  "肖文光",
+  "于艺萱",
+  "张延兵",
+  "徐浩"
+];
 
-window.onload = function(){
-  if(currentUser){
-    document.getElementById("currentUser").value = currentUser;
-    document.getElementById("userInfo").innerText = "当前身份：" + currentUser;
-  }
-  loadAll();
+const gradients = [
+  "linear-gradient(135deg,#ff006e,#fb5607)",
+  "linear-gradient(135deg,#3a86ff,#8338ec)",
+  "linear-gradient(135deg,#06d6a0,#118ab2)",
+  "linear-gradient(135deg,#ffbe0b,#fb5607)",
+  "linear-gradient(135deg,#f72585,#7209b7)",
+  "linear-gradient(135deg,#4cc9f0,#4361ee)",
+  "linear-gradient(135deg,#80ed99,#00b4d8)",
+  "linear-gradient(135deg,#f15bb5,#fee440)"
+];
+
+let currentUser = localStorage.getItem("currentUser") || "";
+let submitStage = 1;
+
+window.onload = async function(){
+  renderStudentGrid();
+  updateCurrentUserText();
+  await loadWorks();
 };
 
-function saveUser(){
-  const name = document.getElementById("currentUser").value.trim();
-  if(!name){
-    alert("请先输入姓名");
-    return;
-  }
+function showToast(text){
+  const toast = document.getElementById("toast");
+  toast.innerText = text;
+  toast.classList.add("show");
+
+  setTimeout(()=>{
+    toast.classList.remove("show");
+  },1800);
+}
+
+function renderStudentGrid(){
+   const grid = document.getElementById("studentGrid");
+
+  grid.innerHTML = "";
+
+  students.forEach((name,index)=>{
+
+    const active = currentUser === name ? "active" : "";
+
+    grid.innerHTML += `
+      <button
+        class="student-card ${active}"
+        onclick="chooseUser('${name}')">
+
+        <div
+          class="avatar"
+          style="background:${gradients[index]}">
+
+          ${name.slice(0,1)}
+
+        </div>
+
+        <div class="name">
+          ${name}
+        </div>
+
+      </button>
+    `;
+  });
+
+}
+
+function chooseUser(name){
   currentUser = name;
   localStorage.setItem("currentUser", currentUser);
-  document.getElementById("userInfo").innerText = "当前身份：" + currentUser;
-  loadAll();
+  renderStudentGrid();
+  updateCurrentUserText();
+  showToast("身份已切换为：" + name);
+  loadWorks();
+}
+
+function updateCurrentUserText(){
+  document.getElementById("currentUserText").innerText =
+    currentUser ? "当前身份：" + currentUser : "当前未选择身份";
+}
+
+function setSubmitStage(stage){
+  submitStage = stage;
+
+  document.querySelectorAll(".stage-tab").forEach((btn,index)=>{
+    btn.classList.toggle("active", index + 1 === stage);
+  });
+
+  document.getElementById("workTitle").value = "";
+  document.getElementById("workLink").value = "";
 }
 
 async function submitWork(){
   if(!currentUser){
-    alert("请先确认身份");
+    alert("请先选择你的身份");
     return;
   }
 
-  const stage = Number(document.getElementById("stage").value);
-  const title = document.getElementById("title").value.trim();
-  const link = document.getElementById("link").value.trim();
+  if(currentUser === "老师"){
+    alert("老师不需要提交作品，只需要评分");
+    return;
+  }
+
+  const title = document.getElementById("workTitle").value.trim();
+  const link = document.getElementById("workLink").value.trim();
 
   if(!title || !link){
     alert("请填写作品名称和作品链接");
     return;
   }
 
-  const { data: oldWork } = await client
+  const { data: oldWork, error: oldError } = await client
     .from(worksTable)
     .select("*")
     .eq("student", currentUser)
-    .eq("stage", stage)
+    .eq("stage", submitStage)
     .maybeSingle();
+
+  if(oldError){
+    alert("查询作品失败：" + oldError.message);
+    return;
+  }
 
   let result;
 
   if(oldWork){
     result = await client
       .from(worksTable)
-      .update({ title, link })
+      .update({
+        title: title,
+        link: link
+      })
       .eq("id", oldWork.id);
   }else{
     result = await client
@@ -203,9 +726,9 @@ async function submitWork(){
       .insert([{
         id: Date.now(),
         student: currentUser,
-        stage,
-        title,
-        link
+        stage: submitStage,
+        title: title,
+        link: link
       }]);
   }
 
@@ -215,15 +738,11 @@ async function submitWork(){
     return;
   }
 
-  alert("作品已保存");
-  document.getElementById("title").value = "";
-  document.getElementById("link").value = "";
-  await loadAll();
-}
+  document.getElementById("workTitle").value = "";
+  document.getElementById("workLink").value = "";
 
-async function loadAll(){
+  showToast("作品已保存");
   await loadWorks();
-  await loadResults();
 }
 
 async function loadWorks(){
@@ -238,149 +757,149 @@ async function loadWorks(){
     return;
   }
 
-  const { data: scores } = await client
+  const { data: scores, error: scoreError } = await client
     .from("scores")
     .select("*");
 
-  const workList = document.getElementById("workList");
-  workList.innerHTML = "";
-
-  for(const work of works){
-    const workScores = scores.filter(s => Number(s.work_id) === Number(work.id));
-    const avg = workScores.length
-      ? workScores.reduce((sum,s)=>sum + Number(s.score),0) / workScores.length
-      : 0;
-
-    const myScore = currentUser
-      ? workScores.find(s => s.rater === currentUser)
-      : null;
-
-    workList.innerHTML += `
-      <tr>
-        <td>${work.student}</td>
-        <td>阶段${work.stage}</td>
-        <td>${work.title}</td>
-        <td><a href="${work.link}" target="_blank">查看作品</a></td>
-        <td>
-          <input 
-            class="scoreInput"
-            type="number"
-            min="0"
-            max="100"
-            id="score-${work.id}"
-            value="${myScore ? myScore.score : ""}"
-            placeholder="0-100">
-        </td>
-        <td>
-          <button onclick="saveScore(${work.id})">保存</button>
-        </td>
-        <td>${avg.toFixed(2)}</td>
-      </tr>
-    `;
+  if(scoreError){
+    alert("读取评分失败：" + scoreError.message);
+    console.error(scoreError);
+    return;
   }
+
+  renderWorks(works || [], scores || []);
+}
+
+function renderWorks(works, scores){
+  const area = document.getElementById("worksArea");
+  area.innerHTML = "";
+
+  [1,2,3].forEach(stage=>{
+    let html = `
+      <div class="stage-section">
+        <div class="stage-heading">
+          <span>${stage}</span>
+          阶段 ${stage} 作品评分
+        </div>
+        <div class="work-grid">
+    `;
+
+    students.forEach((student,index)=>{
+      const work = works.find(w => w.student === student && Number(w.stage) === stage);
+      const myScore = work && currentUser
+        ? scores.find(s => Number(s.work_id) === Number(work.id) && s.rater === currentUser)
+        : null;
+
+      const glow = [
+        "rgba(255,0,128,.8)",
+        "rgba(59,130,246,.8)",
+        "rgba(34,197,94,.8)",
+        "rgba(245,158,11,.8)",
+        "rgba(168,85,247,.8)",
+        "rgba(6,182,212,.8)",
+        "rgba(132,204,22,.8)",
+        "rgba(236,72,153,.8)"
+      ][index];
+
+      html += `
+        <div class="work-card" style="--grad:${gradients[index]}; --glow:${glow}">
+          <div class="card-top">
+            <div class="small-avatar">${student.slice(0,1)}</div>
+            <div>
+              <div class="author">${student}</div>
+              <div class="stage-label">阶段 ${stage}</div>
+            </div>
+          </div>
+      `;
+
+      if(work){
+        html += `
+          <div class="work-title">${work.title}</div>
+          <a class="link-btn" href="${work.link}" target="_blank">查看作品</a>
+
+          ${
+            myScore
+            ? `<div class="scored-tag">你已完成本作品评分</div>`
+            : `
+              <div class="score-row">
+                <input id="score-${work.id}" type="number" min="0" max="100" placeholder="0-100">
+                <button class="score-btn" onclick="saveScore(${work.id})">提交评分</button>
+              </div>
+            `
+          }
+        `;
+      }else{
+        html += `
+          <div class="empty">
+            该同学还未提交阶段 ${stage} 作品。
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    area.innerHTML += html;
+  });
 }
 
 async function saveScore(workId){
   if(!currentUser){
-    alert("请先确认身份");
+    alert("请先选择你的身份");
     return;
   }
 
-  const scoreValue = document.getElementById("score-" + workId).value;
+  const input = document.getElementById("score-" + workId);
+  const score = Number(input.value);
 
-  if(scoreValue === "" || Number(scoreValue) < 0 || Number(scoreValue) > 100){
-    alert("请输入0-100的分数");
+  if(input.value === "" || score < 0 || score > 100){
+    alert("请输入0-100之间的分数");
     return;
   }
 
-  const { data: oldScore } = await client
+  const { data: oldScore, error: oldError } = await client
     .from("scores")
     .select("*")
     .eq("work_id", workId)
     .eq("rater", currentUser)
     .maybeSingle();
 
-  let result;
-
-  if(oldScore){
-    result = await client
-      .from("scores")
-      .update({ score: Number(scoreValue) })
-      .eq("id", oldScore.id);
-  }else{
-    result = await client
-      .from("scores")
-      .insert([{
-        id: Date.now() + Math.floor(Math.random()*1000),
-        work_id: workId,
-        rater: currentUser,
-        score: Number(scoreValue)
-      }]);
-  }
-
-  if(result.error){
-    alert("评分失败：" + result.error.message);
-    console.error(result.error);
+  if(oldError){
+    alert("查询评分失败：" + oldError.message);
+    console.error(oldError);
     return;
   }
 
-  alert("评分已保存");
-  loadAll();
-}
+  if(oldScore){
+    alert("你已经给这个作品打过分了，不能重复评分");
+    return;
+  }
 
-async function loadResults(){
-  const { data: works } = await client
-    .from(worksTable)
-    .select("*");
-
-  const { data: scores } = await client
+  const { error } = await client
     .from("scores")
-    .select("*");
+    .insert([{
+      id: Date.now() + Math.floor(Math.random()*1000),
+      work_id: workId,
+      rater: currentUser,
+      score: score
+    }]);
 
-  const { data: weightData } = await client
-    .from("weights")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
+  if(error){
+    alert("评分失败：" + error.message);
+    console.error(error);
+    return;
+  }
 
-  const w1 = weightData ? Number(weightData.stage1) / 100 : 0.2;
-  const w2 = weightData ? Number(weightData.stage2) / 100 : 0.3;
-  const w3 = weightData ? Number(weightData.stage3) / 100 : 0.5;
-
-  const students = [...new Set(works.map(w => w.student))];
-
-  const resultList = document.getElementById("resultList");
-  resultList.innerHTML = "";
-
-  students.forEach(student=>{
-    const stageAvgs = [1,2,3].map(stage=>{
-      const work = works.find(w => w.student === student && Number(w.stage) === stage);
-      if(!work) return 0;
-
-      const workScores = scores.filter(s => Number(s.work_id) === Number(work.id));
-      if(workScores.length === 0) return 0;
-
-      return workScores.reduce((sum,s)=>sum + Number(s.score),0) / workScores.length;
-    });
-
-    const total =
-      stageAvgs[0] * w1 +
-      stageAvgs[1] * w2 +
-      stageAvgs[2] * w3;
-
-    resultList.innerHTML += `
-      <tr>
-        <td>${student}</td>
-        <td>${stageAvgs[0].toFixed(2)}</td>
-        <td>${stageAvgs[1].toFixed(2)}</td>
-        <td>${stageAvgs[2].toFixed(2)}</td>
-        <td><b>${total.toFixed(2)}</b></td>
-      </tr>
-    `;
-  });
+  showToast("评分成功");
+  await loadWorks();
 }
 
-setInterval(loadAll, 5000);
+setInterval(loadWorks, 6000);
 </script>
 
 </body>
