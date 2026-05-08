@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>课程作品管理中心</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:
+  "Inter",
+  "PingFang SC",
+  sans-serif;
+
+  min-height:100vh;
+
+  background:
+    radial-gradient(circle at top left,#ffd6f8 0%,transparent 30%),
+    radial-gradient(circle at top right,#b8d8ff 0%,transparent 35%),
+    radial-gradient(circle at bottom,#d5c5ff 0%,transparent 40%),
+    linear-gradient(135deg,#eef2ff,#f8f9ff);
+
+  color:#1d2340;
+
+  padding:60px;
+}
+
+.page-title{
+  text-align:center;
+  margin-bottom:50px;
+}
+
+.page-title h1{
+  font-size:58px;
+  font-weight:900;
+  background:linear-gradient(90deg,#7b61ff,#ff4fd8);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:12px;
+}
+
+.page-title p{
+  color:#6e7395;
+  font-size:16px;
+}
+
+.glass{
+  background:rgba(255,255,255,.55);
+
+  backdrop-filter:blur(24px);
+
+  border:1px solid rgba(255,255,255,.6);
+
+  border-radius:34px;
+
+  box-shadow:
+  0 10px 40px rgba(99,102,241,.12);
+
+  padding:35px;
+
+  margin-bottom:35px;
+}
+
+.section-title{
+  font-size:28px;
+  font-weight:800;
+  margin-bottom:24px;
+}
+
+.weight-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+}
+
+.weight-card{
+  padding:28px;
+  border-radius:24px;
+
+  background:
+  linear-gradient(
+    135deg,
+    rgba(255,255,255,.7),
+    rgba(255,255,255,.35)
+  );
+
+  border:1px solid rgba(255,255,255,.7);
+}
+
+.weight-card h3{
+  margin-bottom:18px;
+  font-size:22px;
+}
+
+.weight-card input{
+  width:100%;
+  height:54px;
+
+  border:none;
+
+  border-radius:18px;
+
+  padding:0 18px;
+
+  font-size:20px;
+
+  background:rgba(255,255,255,.75);
+}
+
+.save-btn{
+  margin-top:25px;
+
+  border:none;
+
+  background:linear-gradient(
+    90deg,
+    #7b61ff,
+    #ff4fd8
+  );
+
+  color:white;
+
+  height:54px;
+
+  padding:0 36px;
+
+  border-radius:20px;
+
+  font-size:18px;
+
+  font-weight:700;
+
+  cursor:pointer;
+}
+
+.rank-list{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.rank-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:22px 28px;
+
+  border-radius:24px;
+
+  background:
+  linear-gradient(
+    135deg,
+    rgba(255,255,255,.8),
+    rgba(255,255,255,.45)
+  );
+}
+
+.rank-left{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.rank-number{
+  width:48px;
+  height:48px;
+
+  border-radius:18px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:white;
+
+  font-weight:800;
+
+  background:linear-gradient(
+    135deg,
+    #7b61ff,
+    #4da3ff
+  );
+}
+
+.rank-name{
+  font-size:22px;
+  font-weight:700;
+}
+
+.rank-score{
+  font-size:28px;
+  font-weight:900;
+
+  background:linear-gradient(
+    90deg,
+    #7b61ff,
+    #ff4fd8
+  );
+
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.table-wrap{
+  overflow:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th{
+  text-align:left;
+  padding:18px;
+  color:#6e7395;
+  font-size:14px;
+}
+
+td{
+  padding:22px 18px;
+  font-size:17px;
+  border-top:1px solid rgba(0,0,0,.06);
+}
+
+.status-box{
+  padding:18px;
+  border-radius:20px;
+
+  background:
+  linear-gradient(
+    135deg,
+    rgba(255,255,255,.8),
+    rgba(255,255,255,.4)
+  );
+
+  margin-bottom:18px;
+}
+
+.status-box h4{
+  margin-bottom:14px;
+  font-size:20px;
+}
+
+.tag{
+  display:inline-block;
+
+  padding:8px 14px;
+
+  border-radius:999px;
+
+  margin:6px;
+
+  font-size:14px;
+
+  font-weight:700;
+}
+
+.done{
+  background:#d7ffe6;
+  color:#09934d;
+}
+
+.todo{
+  background:#ffe0e0;
+  color:#d13434;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="page-title">
+  <h1>课程作品管理中心</h1>
+  <p>未来艺术课程 · 实时评分管理系统</p>
+</div>
+
+<div class="glass">
+
+  <div class="section-title">
+    阶段权重设置
+  </div>
+
+  <div class="weight-grid">
+
+    <div class="weight-card">
+      <h3>阶段1权重</h3>
+      <input id="w1" type="number">
+    </div>
+
+    <div class="weight-card">
+      <h3>阶段2权重</h3>
+      <input id="w2" type="number">
+    </div>
+
+    <div class="weight-card">
+      <h3>阶段3权重</h3>
+      <input id="w3" type="number">
+    </div>
+
+  </div>
+
+  <button class="save-btn" onclick="saveWeights()">
+    保存权重
+  </button>
+
+</div>
+
+<div class="glass">
+
+  <div class="section-title">
+    实时排名
+  </div>
+
+  <div id="rankList" class="rank-list"></div>
+
+</div>
+
+<div class="glass">
+
+  <div class="section-title">
+    阶段成绩总览
+  </div>
+
+  <div class="table-wrap">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>学生</th>
+          <th>阶段1</th>
+          <th>阶段2</th>
+          <th>阶段3</th>
+          <th>最终成绩</th>
+        </tr>
+      </thead>
+
+      <tbody id="scoreTable"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<div class="glass">
+
+  <div class="section-title">
+    评分完成情况
+  </div>
+
+  <div id="statusList"></div>
+
+</div>
+
+<script>
+
+const students = [
+"刘一",
+"王景璇",
+"龙珊",
+"鲍禹尧",
+"肖文光",
+"于艺萱",
+"张延兵",
+"徐浩"
+];
+
+const supabaseUrl =
+"https://gzsocqnaoowhwjfzruhc.supabase.co";
+
+const supabaseKey =
+"sb_publishable_47-zT-7avu3y1tIXqWLQyw_2kc4AMsp";
+
+const client =
+supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
+const worksTable =
+"智能设计与编程";
+
+async function loadAll(){
+
+  const { data: works } =
+  await client
+  .from(worksTable)
+  .select("*");
+
+  const { data: scores } =
+  await client
+  .from("scores")
+  .select("*");
+
+  const { data: weights } =
+  await client
+  .from("weights")
+  .select("*")
+  .eq("id",1)
+  .maybeSingle();
+
+  document.getElementById("w1").value =
+  weights?.stage1 || 33;
+
+  document.getElementById("w2").value =
+  weights?.stage2 || 33;
+
+  document.getElementById("w3").value =
+  weights?.stage3 || 34;
+
+  const safeWeights = weights || {
+  stage1: 20,
+  stage2: 30,
+  stage3: 50
+};
+
+loadRanks(works || [], scores || [], safeWeights);
+loadTable(works || [], scores || [], safeWeights);
+
+  loadStatus(works,scores);
+
+}
+
+function getAvg(arr){
+
+  if(arr.length === 0){
+    return 0;
+  }
+
+  return arr.reduce((a,b)=>a+b,0)/arr.length;
+
+}
+
+function loadRanks(works,scores,weights){
+
+  const result = [];
+
+  for(const student of students){
+
+    let s1 = [];
+    let s2 = [];
+    let s3 = [];
+
+    const studentWorks =
+    works.filter(w=>w.student===student);
+
+    for(const work of studentWorks){
+
+      const ws =
+      scores
+      .filter(s=>s.work_id===work.id)
+      .map(s=>s.score);
+
+      if(work.stage == 1){
+        s1.push(...ws);
+      }
+
+      if(work.stage == 2){
+        s2.push(...ws);
+      }
+
+      if(work.stage == 3){
+        s3.push(...ws);
+      }
+
+    }
+
+    const a1 = getAvg(s1);
+    const a2 = getAvg(s2);
+    const a3 = getAvg(s3);
+
+    const total =
+      a1*(weights.stage1/100) +
+      a2*(weights.stage2/100) +
+      a3*(weights.stage3/100);
+
+    result.push({
+      student,
+      total
+    });
+
+  }
+
+  result.sort((a,b)=>b.total-a.total);
+
+  const rankList =
+  document.getElementById("rankList");
+
+  rankList.innerHTML = "";
+
+  result.forEach((item,index)=>{
+
+    rankList.innerHTML += `
+      <div class="rank-item">
+
+        <div class="rank-left">
+
+          <div class="rank-number">
+            ${index+1}
+          </div>
+
+          <div class="rank-name">
+            ${item.student}
+          </div>
+
+        </div>
+
+        <div class="rank-score">
+          ${item.total.toFixed(2)}
+        </div>
+
+      </div>
+    `;
+
+  });
+
+}
+
+function loadTable(works,scores,weights){
+
+  const table =
+  document.getElementById("scoreTable");
+
+  table.innerHTML = "";
+
+  for(const student of students){
+
+    let s1 = [];
+    let s2 = [];
+    let s3 = [];
+
+    const studentWorks =
+    works.filter(w=>w.student===student);
+
+    for(const work of studentWorks){
+
+      const ws =
+      scores
+      .filter(s=>s.work_id===work.id)
+      .map(s=>s.score);
+
+      if(work.stage == 1){
+        s1.push(...ws);
+      }
+
+      if(work.stage == 2){
+        s2.push(...ws);
+      }
+
+      if(work.stage == 3){
+        s3.push(...ws);
+      }
+
+    }
+
+    const a1 = getAvg(s1);
+    const a2 = getAvg(s2);
+    const a3 = getAvg(s3);
+
+    const total =
+      a1*(weights.stage1/100) +
+      a2*(weights.stage2/100) +
+      a3*(weights.stage3/100);
+
+    table.innerHTML += `
+      <tr>
+        <td>${student}</td>
+        <td>${a1.toFixed(2)}</td>
+        <td>${a2.toFixed(2)}</td>
+        <td>${a3.toFixed(2)}</td>
+        <td>
+          <strong>
+            ${total.toFixed(2)}
+          </strong>
+        </td>
+      </tr>
+    `;
+
+  }
+
+}
+
+function loadStatus(works,scores){
+
+  const box =
+  document.getElementById("statusList");
+
+  box.innerHTML = "";
+
+  for(const work of works){
+
+    const done =
+    scores
+    .filter(s=>s.work_id===work.id)
+    .map(s=>s.rater);
+
+    const todo =
+    students.filter(
+      s=>!done.includes(s)
+    );
+
+    box.innerHTML += `
+      <div class="status-box">
+
+        <h4>
+          ${work.student}
+          ·
+          阶段${work.stage}
+          ·
+          ${work.title}
+        </h4>
+
+        <div>
+          <strong>已评分：</strong>
+
+          ${
+            done.map(
+              d=>`
+                <span class="tag done">
+                  ${d}
+                </span>
+              `
+            ).join("")
+          }
+        </div>
+
+        <div style="margin-top:10px;">
+          <strong>未评分：</strong>
+
+          ${
+            todo.map(
+              d=>`
+                <span class="tag todo">
+                  ${d}
+                </span>
+              `
+            ).join("")
+          }
+        </div>
+
+      </div>
+    `;
+
+  }
+
+}
+
+async function saveWeights(){
+
+  const stage1 =
+  Number(
+    document.getElementById("w1").value
+  );
+
+  const stage2 =
+  Number(
+    document.getElementById("w2").value
+  );
+
+  const stage3 =
+  Number(
+    document.getElementById("w3").value
+  );
+
+  await client
+  .from("weights")
+  .upsert([{
+    id:1,
+    stage1,
+    stage2,
+    stage3
+  }]);
+
+  alert("权重保存成功");
+
+  loadAll();
+
+}
+
+loadAll();
+
+</script>
+
+</body>
+</html>
